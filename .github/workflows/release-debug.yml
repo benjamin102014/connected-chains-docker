@@ -32,6 +32,21 @@ jobs:
       id-token: write
 
     steps:
+      - name: Check tag branch via API
+        id: branch_check
+        run: |
+          # Get tag info from GitHub API
+          TAG_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/git/refs/tags/${{ github.ref_name }}")
+          
+          # Check if tag was created from main branch context
+          echo $TAG_INFO
+          if echo "$TAG_INFO" | grep -q "main"; then
+            echo "is_main=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_main=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
 

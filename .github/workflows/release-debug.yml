@@ -8,10 +8,10 @@ name: Release debugging image
 on:
   push:
     branches: [ "main" ]
-    paths: [ "images/debug" ]
+    paths: [ "images/debug/**" ]
   pull_request:
     branches: [ "main" ]
-    paths: [ "images/debug" ]
+    paths: [ "images/debug/**" ]
 
 env:
   # Use docker.io for Docker Hub if empty
@@ -29,6 +29,9 @@ jobs:
       id-token: write
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Get image tag
         id: get_image_tag
         run: |
@@ -39,9 +42,6 @@ jobs:
             | tr -d [:space:]
           echo $VERSION
           echo "image_tag=${VERSION}" >> $GITHUB_OUTPUT
-
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
       # Install the cosign tool except on PR
       # https://github.com/sigstore/cosign-installer

@@ -39,7 +39,7 @@ jobs:
             | cut -d'=' -f2 \
             | tr -d '"' \
             | tr -d "'" \
-            | tr -d [:space:]
+            | tr -d [:space:])
           echo $VERSION
           echo "image_tag=${VERSION}" >> $GITHUB_OUTPUT
 

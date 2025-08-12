@@ -7,14 +7,11 @@ name: Release debugging image
 
 on:
   push:
-    tags:
-      - "**"
-    paths:
-      - images/debug
+    branches: [ "main" ]
+    paths: [ "images/debug" ]
   pull_request:
     branches: [ "main" ]
-    paths:
-      - images/debug
+    paths: [ "images/debug" ]
 
 env:
   # Use docker.io for Docker Hub if empty
@@ -32,20 +29,16 @@ jobs:
       id-token: write
 
     steps:
-      - name: Check tag branch via API
-        id: branch_check
+      - name: Get image tag
+        id: get_image_tag
         run: |
-          # Get tag info from GitHub API
-          TAG_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            "https://api.github.com/repos/${{ github.repository }}/git/refs/tags/${{ github.ref_name }}")
-          
-          # Check if tag was created from main branch context
-          echo $TAG_INFO
-          if echo "$TAG_INFO" | grep -q "main"; then
-            echo "is_main=true" >> $GITHUB_OUTPUT
-          else
-            echo "is_main=false" >> $GITHUB_OUTPUT
-          fi
+          VERSION=$(grep "^ARG VERSION=" images/debug/Dockerfile \
+            | cut -d'=' -f2 \
+            | tr -d '"' \
+            | tr -d "'" \
+            | tr -d [:space:]
+          echo $VERSION
+          echo "image_tag=${VERSION}" >> $GITHUB_OUTPUT
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -82,8 +75,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=tag,enable=${{ !startsWith(github.ref_name, 'dev-') }}
-            type=raw,value=dev,enable=${{ startsWith(github.ref_name, 'dev-') }}
+            type=semver,pattern={{version}},value=${{ steps.get_image_tag.outputs.image_tag }}
 
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
